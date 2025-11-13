@@ -1,6 +1,8 @@
+using FirebirdSql.Data.FirebirdClient; // Пространство имен для пользовательских контролов
 using System;
-using System.Windows.Forms;
+using System.Data;
 using System.Drawing; // Не забываем про это пространство имен для работы с цветом
+using System.Windows.Forms;
 
 namespace SecurityAgencyApp
 {
@@ -164,7 +166,7 @@ namespace SecurityAgencyApp
             }
         }
 
-        // --- 3. Метод для настройки лог-консоли (с учетом правок) ---
+        // --- 3. Метод для настройки лог-консоли ---
         private void InitializeLogConsole()
         {
             // Лог-панель (контейнер для логов и кнопки)

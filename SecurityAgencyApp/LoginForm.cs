@@ -1,4 +1,5 @@
 ﻿//C# SecurityAgencyApp\LoginForm.cs
+using FirebirdSql.Data.FirebirdClient;
 using System;
 using System.Drawing;
 using System.Windows.Forms;
@@ -65,6 +66,67 @@ namespace SecurityAgencyApp
                 return;
             }
 
+            // Выполнить подключение к Firebird и выполнить тестовый запрос
+            string ConnString;
+            try
+            {
+                var cs = new FbConnectionStringBuilder
+                {
+                    DataSource = "localhost",
+                    UserID = "SYSDBA",
+                    Password = "masterkey",
+                    Database = @"C:\Base\Secure_Base.fdb",
+                    Port = 3050,
+                    Charset = "utf8"
+                };
+
+                ConnString = cs.ToString();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, $"Неверно сформирована строка подключения: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            object dbTestResult = null;
+            try
+            {
+                using var fbConn = new FbConnection(ConnString);
+                fbConn.Open();
+
+                // Выполняем простой тестовый запрос — вернёт одну строку из системной таблицы
+                const string testQuery = "SELECT 'OK' AS RESULT FROM RDB$DATABASE";
+                using var cmd = new FbCommand(testQuery, fbConn);
+                dbTestResult = cmd.ExecuteScalar();
+
+                // Логируем результат в консоль приложения (если Form1 доступна)
+                string message = $"Проверка БД: {(dbTestResult?.ToString() ?? "<null>")}";
+                if (this.Owner is Form1 ownerForm)
+                {
+                    ownerForm.LogMessage(message);
+                }
+                else
+                {
+                    // fallback — найти открытую Form1 в приложении
+                    foreach (Form f in Application.OpenForms)
+                    {
+                        if (f is Form1 frm)
+                        {
+                            frm.LogMessage(message);
+                            break;
+                        }
+                    }
+                }
+
+                fbConn.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, $"Не удалось подключиться к базе данных или выполнить тестовый запрос: {ex.Message}", "Ошибка соединения", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            // Если у вас есть дополнительная логика проверки логина/пароля — вызываем валидатор
             if (validator(user, pass))
             {
                 this.DialogResult = DialogResult.OK;
